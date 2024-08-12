@@ -1,2 +1,5 @@
 venv
 .idea
+app/__pycache__/
+shop/__pycache__/
+**__pycache__
