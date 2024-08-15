@@ -1,5 +1,6 @@
 venv
 .idea
-app/__pycache__/
+Team_project/__pycache__/
 shop/__pycache__/
 **__pycache__
+db.sqlite3

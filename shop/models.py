@@ -3,13 +3,14 @@ import uuid
 
 from django.db import models
 from django.utils.text import slugify
+from django.conf import settings
 
 
-def vyshyvanka_image_file_path(instance, filename):
+def embroidery_image_file_path(instance, filename):
     _, extension = os.path.splitext(filename)
     filename = f"{slugify(instance.title)}-{uuid.uuid4()}{extension}"
 
-    return os.path.join("uploads/vyshyvanka/", filename)
+    return os.path.join("uploads/embroidery/", filename)
 
 
 def books_image_file_path(instance, filename):
@@ -19,7 +20,7 @@ def books_image_file_path(instance, filename):
     return os.path.join("uploads/books/", filename)
 
 
-class Vyshyvanka(models.Model):
+class Embroidery(models.Model):
     class CategoryChoice(models.TextChoices):
         MALE = "MALE"
         FEMALE = "FEMALE"
@@ -35,10 +36,10 @@ class Vyshyvanka(models.Model):
         XXL = "XXL"
 
     name = models.CharField(max_length=255)
-    category = models.CharField(choices=CategoryChoice)
-    size = models.CharField(choices=SizeChoice)
+    category = models.CharField(choices=CategoryChoice, max_length=50)
+    size = models.CharField(choices=SizeChoice, max_length=50)
     price = models.IntegerField()
-    image = models.ImageField(null=True, upload_to=vyshyvanka_image_file_path)
+    image = models.ImageField(null=True, upload_to=embroidery_image_file_path)
 
     class Meta:
         ordering = ["name"]
@@ -60,3 +61,15 @@ class Book(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class Order(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE
+    )
+    embroideries = models.ManyToManyField(Embroidery, blank=True)
+    books = models.ManyToManyField(Book, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
