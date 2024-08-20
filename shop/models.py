@@ -4,6 +4,7 @@ import uuid
 from django.db import models
 from django.utils.text import slugify
 from django.conf import settings
+from multiselectfield import MultiSelectField
 
 
 def embroidery_image_file_path(instance, filename):
@@ -27,17 +28,18 @@ class Embroidery(models.Model):
         BOY = "BOY"
         GIRL = "GIRL"
 
-    class SizeChoice(models.TextChoices):
-        XS = "XS"
-        S = "S"
-        M = "M"
-        L = "L"
-        XL = "XL"
-        XXL = "XXL"
+    OPTION_CHOICES = (
+        ("XS", "XS"),
+        ("S", "S"),
+        ("M", "M"),
+        ("L", "L"),
+        ("XL", "XL"),
+        ("XXL", "XXL"),
+    )
 
     name = models.CharField(max_length=255)
     category = models.CharField(choices=CategoryChoice, max_length=50)
-    size = models.CharField(choices=SizeChoice, max_length=50)
+    sizes = MultiSelectField(choices=OPTION_CHOICES)
     price = models.IntegerField()
     image = models.ImageField(null=True, upload_to=embroidery_image_file_path)
 
