@@ -1,12 +1,11 @@
-from django.shortcuts import render
-from rest_framework import viewsets, mixins, status, permissions
+from rest_framework import mixins, status, permissions
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.viewsets import GenericViewSet
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAdminUser
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 
 from .models import Embroidery, Book, Order
-from .permissions import IsAdminOrIfAuthenticatedReadOnly
 from .serializers import (
     EmbroiderySerializer,
     EmbroideryImageSerializer,
@@ -37,18 +36,18 @@ class EmbroideryViewSet(
         queryset = self.queryset
 
         if name:
-            queryset = queryset.filter(title__icontains=name)
+            queryset = queryset.filter(name__icontains=name)
 
         if category:
-            queryset = queryset.filter(title__icontains=category)
+            queryset = queryset.filter(category__icontains=category)
 
         if sizes:
-            queryset = queryset.filter(title__icontains=sizes)
+            queryset = queryset.filter(sizes__icontains=sizes)
 
         if price:
-            queryset = queryset.filter(title__icontains=price)
+            queryset = queryset.filter(price=price)
 
-        return queryset.distinct()
+        return queryset
 
     def get_serializer_class(self):
 
@@ -64,7 +63,6 @@ class EmbroideryViewSet(
         permission_classes=[IsAdminUser],
     )
     def upload_image(self, request, pk=None):
-        """Endpoint for uploading image to specific movie"""
         embroidery = self.get_object()
         serializer = self.get_serializer(embroidery, data=request.data)
 
@@ -105,15 +103,15 @@ class BookViewSet(
             queryset = queryset.filter(title__icontains=title)
 
         if description:
-            queryset = queryset.filter(title__icontains=description)
+            queryset = queryset.filter(description__icontains=description)
 
         if genre:
-            queryset = queryset.filter(title__icontains=genre)
+            queryset = queryset.filter(genre__icontains=genre)
 
         if price:
-            queryset = queryset.filter(title__icontains=price)
+            queryset = queryset.filter(price=price)
 
-        return queryset.distinct()
+        return queryset
 
     def get_serializer_class(self):
         if self.action == "list":
@@ -131,7 +129,6 @@ class BookViewSet(
         permission_classes=[IsAdminUser],
     )
     def upload_image(self, request, pk=None):
-        """Endpoint for uploading image to specific movie"""
         book = self.get_object()
         serializer = self.get_serializer(book, data=request.data)
 
@@ -147,3 +144,27 @@ class BookViewSet(
         else:
             permission_classes = [permissions.IsAdminUser]
         return [permission() for permission in permission_classes]
+
+
+class OrderPagination(PageNumberPagination):
+    page_size = 10
+    max_page_size = 100
+
+
+class OrderViewSet(
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    GenericViewSet,
+):
+    queryset = Order.objects.prefetch_related(
+        "embroideries", "books"
+    )
+    serializer_class = OrderSerializer
+    pagination_class = OrderPagination
+    permission_classes = (IsAuthenticated,)
+
+    def get_queryset(self):
+        return Order.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
