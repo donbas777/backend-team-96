@@ -9,14 +9,14 @@ from multiselectfield import MultiSelectField
 
 def embroidery_image_file_path(instance, filename):
     _, extension = os.path.splitext(filename)
-    filename = f"{slugify(instance.name)}-{uuid.uuid4()}{extension}"
+    filename = f"{slugify(instance.name.name)}-{uuid.uuid4()}{extension}"
 
-    return os.path.join("uploads/embroidery/", filename)
+    return os.path.join("uploads/embroideries/", filename)
 
 
 def books_image_file_path(instance, filename):
     _, extension = os.path.splitext(filename)
-    filename = f"{slugify(instance.title)}-{uuid.uuid4()}{extension}"
+    filename = f"{slugify(instance.title.title)}-{uuid.uuid4()}{extension}"
 
     return os.path.join("uploads/books/", filename)
 
@@ -41,7 +41,6 @@ class Embroidery(models.Model):
     category = models.CharField(choices=CategoryChoice, max_length=50)
     sizes = MultiSelectField(choices=OPTION_CHOICES)
     price = models.IntegerField()
-    image = models.ImageField(null=True, upload_to=embroidery_image_file_path)
 
     class Meta:
         ordering = ["name"]
@@ -50,19 +49,28 @@ class Embroidery(models.Model):
         return self.name
 
 
+class EmbroideryImage(models.Model):
+    name = models.ForeignKey(Embroidery, related_name='images', on_delete=models.CASCADE)
+    image = models.ImageField(upload_to=embroidery_image_file_path)
+
+
 class Book(models.Model):
     title = models.CharField(max_length=255)
     description = models.CharField(max_length=255)
     pages = models.IntegerField()
     genre = models.CharField(max_length=255)
     price = models.IntegerField()
-    image = models.ImageField(null=True, upload_to=books_image_file_path)
 
     class Meta:
         ordering = ["title"]
 
     def __str__(self):
         return self.title
+
+
+class BookImage(models.Model):
+    title = models.ForeignKey(Book, related_name='images', on_delete=models.CASCADE)
+    image = models.ImageField(upload_to=books_image_file_path)
 
 
 class Order(models.Model):
